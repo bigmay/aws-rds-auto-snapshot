@@ -6,7 +6,7 @@
 
 本文提供了手动部署的流程以及相关lambda的代码。同样，本文还提供了一个CloudFormation自动化部署脚本。该脚本可以快速自动完成部署，但相比起手动创建来说会多创建2个标准参数 （AWS System Manager服务中的Parameter store服务，具体说明参见下文）。
 
-## 解决方案架构图
+## 解决方案
 
 
 
@@ -35,14 +35,14 @@
 
 ## 手动部署
 
-- 1、创建基础的Lambda
+- ### **1、创建基础的Lambda**
 
     在Lambda创建界面，选择 **从头开始创作**，运行语言选择Python3.7。
     在 **权限 - 执行角色** 中选择 **创建具有基本Lambda权限的角色**
 
     ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/manual-create-lambda.png)
 
-- 2、填入代码
+- ### **2、填入代码**
 
     在该Lambda函数界面中，将以下代码粘贴进函数代码中，修改参数：
     
@@ -75,7 +75,7 @@
     ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/save_code.png)
 
 
-- 3、添加IAM Role权限
+- ### **3、添加IAM Role权限**
 
     在下方 **执行界面** 中，点击 **查看your_iam_role角色** , 进入该角色的摘要中。
 
@@ -87,7 +87,7 @@
 
     ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/create_rules.png)
 
-- 4、添加触发器
+- ### **4、添加触发器**
 
     在该Lambda函数界面，选择 **添加触发器**。
 
@@ -98,7 +98,7 @@
     ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/input_trigger.png)
 
 
-- 5、创建完成
+- ### **5、创建完成**
 
     至此全部手动部署工作已经全部完成。
 
