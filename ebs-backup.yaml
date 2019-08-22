@@ -1,15 +1,15 @@
 AWSTemplateFormatVersion: 2010-09-09
 Parameters:
-  EBSInstanceName:
+  EBSVolumeId:
     Type: "String"
-    Description: "RDS Instance Name"
+    Description: "One EBS Volume ID, or a list of EBS Volume IDs seperated by commas (e.g. vol-xxx,vol-yyy,vol-zzz)."
   MaxSnapshotNumber:
     Type: "String"
     Description: "Maximum number of saved snapshots (1-100)"
 
 
 Resources:
-  rdsBackupRole:
+  EBSBackupRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -21,13 +21,13 @@ Resources:
       Path: "/"
       Policies: 
         - 
-          PolicyName: "rdsbackup"
+          PolicyName: "ebsbackup"
           PolicyDocument: 
             Version: "2012-10-17"
             Statement: 
               - 
                 Effect: "Allow"
-                Action: ["rds:DescribeDBSnapshots","rds:CreateDBSnapshot","rds:DeleteDBSnapshot","ssm:GetParameter"]
+                Action: ["ec2:DeleteSnapshot","ec2:CreateSnapshot","ec2:DescribeSnapshots","ssm:GetParameter"]
                 Resource: "*"
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -38,55 +38,62 @@ Resources:
       Description: 'Triggers notifier lambda every 2 hours'
       ScheduleExpression: rate(2 hours)
       Targets:
-        - Arn: !GetAtt RdsBackupFunction.Arn
+        - Arn: !GetAtt EBSBackupFunction.Arn
           Id: TargetFunctionV1
 
-  PermissionForEventsToInvokeRdsBackupFunction:
+  PermissionForEventsToInvokeEBSBackupFunction:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !Ref RdsBackupFunction
+      FunctionName: !Ref EBSBackupFunction
       Action: lambda:InvokeFunction
       Principal: events.amazonaws.com
       SourceArn: !GetAtt ScheduledRule.Arn
 
-  RdsBackupFunction:
+  EBSBackupFunction:
     Type: AWS::Lambda::Function
     Properties:
       Handler: index.lambda_handler
       Runtime: python3.7
-      Role: !GetAtt rdsBackupRole.Arn
+      Role: !GetAtt EBSBackupRole.Arn
       Code:
         ZipFile: !Sub |
           import boto3
           import time
           def lambda_handler(event, context):
-              clientRDS = boto3.client('rds')
               clientSSM = boto3.client('ssm')
-              db_snapshots = clientRDS.describe_db_snapshots(
-                  SnapshotType='manual',
-              )['DBSnapshots']
-              MAX_SNAPSHOTS = int(clientSSM.get_parameter(Name='RDSMaxSnapshotNumber')['Parameter']['Value'])
-              DB_INSTANCE_NAME = clientSSM.get_parameter(Name='RDSInstanceName')['Parameter']['Value']
-              if len(db_snapshots) >= MAX_SNAPSHOTS:
-                  oldest_snapshot = db_snapshots[0]
-                  for db_snapshot in db_snapshots:
-                      if db_snapshots[0]['SnapshotCreateTime'] > db_snapshot['SnapshotCreateTime']:
-                          oldest_snapshot = db_snapshot
-                  clientRDS.delete_db_snapshot(DBSnapshotIdentifier=oldest_snapshot['DBSnapshotIdentifier'])
-              create_snapshot = clientRDS.create_db_snapshot(
-                  DBSnapshotIdentifier=DB_INSTANCE_NAME + time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()),
-                  DBInstanceIdentifier=DB_INSTANCE_NAME
-              )
-  RDSInstanceNameParameter:
+              MAX_SNAPSHOTS = int(clientSSM.get_parameter(Name='EBSMaxSnapshotNumber')['Parameter']['Value'])
+              EBS_VOLUME_IDS = clientSSM.get_parameter(Name='EBSVolumeId')['Parameter']['Value'].split(',')
+              clientEC2 = boto3.client('ec2')
+              for EBS_VOLUME_ID in EBS_VOLUME_IDS:
+                  ebs_snapshots = clientEC2.describe_snapshots(
+                      Filters=[
+                          {
+                              'Name': 'volume-id',
+                              'Values': [EBS_VOLUME_ID]
+                          },
+                      ],
+                  )['Snapshots']
+                  for i in range(0, len(ebs_snapshots) - MAX_SNAPSHOTS + 1):
+                      oldest_snapshot = ebs_snapshots[0]
+                      for ebs_snapshot in ebs_snapshots:
+                          if oldest_snapshot['StartTime'] > ebs_snapshot['StartTime']:
+                              oldest_snapshot = ebs_snapshot
+                      clientEC2.delete_snapshot(SnapshotId=oldest_snapshot['SnapshotId'])
+                      ebs_snapshots.remove(oldest_snapshot)
+                  clientEC2.create_snapshot(
+                      Description=EBS_VOLUME_ID + time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()),
+                      VolumeId=EBS_VOLUME_ID
+                  )
+  EBSVolumeIdParameter:
     Type: "AWS::SSM::Parameter"
     Properties:
-      Name: "RDSInstanceName"
+      Name: "EBSVolumeId"
       Type: "String"
-      Value: !Ref rdsInstanceName
-  RDSMaxSnapshot:
+      Value: !Ref EBSVolumeId
+  EBSMaxSnapshot:
     Type: "AWS::SSM::Parameter"
     Properties:
-      Name: "RDSMaxSnapshotNumber"
+      Name: "EBSMaxSnapshotNumber"
       Type: "String"
       Value: !Ref MaxSnapshotNumber
 

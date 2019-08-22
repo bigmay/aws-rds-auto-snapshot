@@ -1,10 +1,14 @@
-# RDS定时备份
+# EBS, RDS定时备份
 
 ## 应用场景
 
 目前RDS的自动备份方法是在每日的固定时间进行备份，换言之备份频率为固定每日一次，若想要实现小时级或者分钟级的备份频率则无法通过这种方法来解决。因此，本文提供了一种解决方案：通过AWS CloudWatch Events定时任务触发AWS Lambda函数来执行备份RDS的操作。
 
+同样EBS也缺乏相应的备份解决方案，而它同样也能通过上述的解决方案来解决。
+
 本文提供了手动部署的流程以及相关lambda的代码。同样，本文还提供了一个CloudFormation自动化部署脚本。该脚本可以快速自动完成部署，但相比起手动创建来说会多创建2个标准参数 （AWS System Manager服务中的Parameter store服务，具体说明参见下文）。
+
+下文主要介绍以RDS的对象的解决方案。因为EBS的部署流程与RDS的基本相同，所以完全可以参考下文来进行部署，其中一些EBS与RDS部署的不同之处会加以说明。
 
 ## 解决方案
 
@@ -21,8 +25,6 @@
 - [Lambda](https://docs.aws.amazon.com/zh_cn/lambda/latest/dg/welcome.html) : 计算服务，可使您无需预配置或管理服务器即可运行代码。
 
 - [IAM Role](https://docs.aws.amazon.com/zh_cn/IAM/latest/UserGuide/id_roles_terms-and-concepts.html) : IAM 角色类似于 IAM 用户，因为它是一个 AWS 身份，该身份具有确定其在 AWS 中可执行和不可执行的操作的权限策略。
-
-- [RDS](https://docs.aws.amazon.com/zh_cn/AmazonRDS/latest/UserGuide/Welcome.html) : 关系型数据库服务
 
 ### 自动部署
 
@@ -44,6 +46,8 @@
 
 - ### **2、填入代码**
 
+    - **RDS版参数说明及代码** 
+
     在该Lambda函数界面中，将以下代码粘贴进函数代码中，修改参数：
     
     - 第四行 MAX_SNAPSHOTS : 您想保存最大的副本数量(最大100)
@@ -64,20 +68,57 @@ def lambda_handler(event, context):
             SnapshotType='manual',
             DBInstanceIdentifier= DB_INSTANCE_NAME
         )['DBSnapshots']
-        if len(db_snapshots) >= MAX_SNAPSHOTS:
+        for i in range(0, len(db_snapshots) - MAX_SNAPSHOTS + 1):
             oldest_snapshot = db_snapshots[0]
             for db_snapshot in db_snapshots:
                 if oldest_snapshot['SnapshotCreateTime'] > db_snapshot['SnapshotCreateTime']:
                     oldest_snapshot = db_snapshot
             clientRDS.delete_db_snapshot(DBSnapshotIdentifier=oldest_snapshot['DBSnapshotIdentifier'])
+            db_snapshots.remove(oldest_snapshot)
         clientRDS.create_db_snapshot(
             DBSnapshotIdentifier=DB_INSTANCE_NAME + time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()),
             DBInstanceIdentifier=DB_INSTANCE_NAME
         )
 ```
 
-
 ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/save_code.png)
+
+
+### **EBS版参数说明及代码**
+
+- 第四行 MAX_SNAPSHOTS : 您想保存最大的副本数量(最大100)
+- 第五行 DB_INSTANCE_NAME ：您想应用该脚本的EBS卷名称, 或者一组名称
+
+```
+import boto3
+import time
+def lambda_handler(event, context):
+    MAX_SNAPSHOTS = 5
+    EBS_VOLUME_IDS = ['test']
+    clientEC2 = boto3.client('ec2')
+    for EBS_VOLUME_ID in EBS_VOLUME_IDS:
+        ebs_snapshots = clientEC2.describe_snapshots(
+            Filters=[
+                {
+                    'Name': 'volume-id',
+                    'Values': [EBS_VOLUME_ID]
+                },
+            ],
+        )['Snapshots']
+        for i in range(0, len(ebs_snapshots) - MAX_SNAPSHOTS + 1):
+            oldest_snapshot = ebs_snapshots[0]
+            for ebs_snapshot in ebs_snapshots:
+                if oldest_snapshot['StartTime'] > ebs_snapshot['StartTime']:
+                    oldest_snapshot = ebs_snapshot
+            clientEC2.delete_snapshot(SnapshotId=oldest_snapshot['SnapshotId'])
+            ebs_snapshots.remove(oldest_snapshot)
+        clientEC2.create_snapshot(
+            Description=EBS_VOLUME_ID + time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()),
+            VolumeId=EBS_VOLUME_ID
+        )
+
+```
+
 
 
 - ### **3、添加IAM Role权限**
@@ -86,11 +127,14 @@ def lambda_handler(event, context):
 
     ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/iam_role.png)
 
-    在 **摘要界面** 中，选择 **添加内联策略** ，按照下图选定指定规则，然后输入该内联策略名称后创建。
+    在 **摘要界面** 中，选择 **添加内联策略** ，按照下图2选定指定规则，然后输入该内联策略名称后创建(EBS的规则在下图3)。
 
     ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/iam_add_role.png)
 
-    ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/create_rules.png)
+    ![RDS脚本规则](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/create_rules.png)
+
+    ![EBS脚本规则](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/ebs/ebs_add_iam_role.png)
+
 
 - ### **4、添加触发器**
 
@@ -111,7 +155,14 @@ def lambda_handler(event, context):
 
 您可以通过点击下方 **Quick Start** 链接直接进入创建页面。
 
-[![Image link china](http://cdn.quickstart.org.cn/assets/ChinaRegion.png)](https://console.amazonaws.cn/cloudformation/home?region=cn-north-1#/stacks/new?stackName=backup-rds&templateURL=https://quickstart-rds-backup.s3.cn-north-1.amazonaws.com.cn/rds-backup.yaml) 
+**- RDS CloudFormation Quick Start**
+
+[![Image link china](http://cdn.quickstart.org.cn/assets/ChinaRegion.png)](https://console.amazonaws.cn/cloudformation/home?region=cn-north-1#/stacks/new?stackName=backup-rds&templateURL=https://quickstart-rds-backup.s3.cn-north-1.amazonaws.com.cn/rds-backup.yaml)
+
+**- EBS CloudFormation Quick Start**
+
+[![Image link china](http://cdn.quickstart.org.cn/assets/ChinaRegion.png)](https://console.amazonaws.cn/cloudformation/home?region=cn-north-1#/stacks/new?stackName=backup-ebs&templateURL=https://quickstart-rds-backup.s3.cn-north-1.amazonaws.com.cn/ebs-backup.yaml)
+
 
 
 ### 要点
@@ -123,10 +174,16 @@ def lambda_handler(event, context):
 
 - 在 **指定堆栈详细信息** 页面上，填写堆栈名称、您想应用该脚本的RDS实例名称,以及您想保存最大的副本数量(最大100)，完成后选择 **下一步**
 
-    - rdsInstanceName: 您想应用该脚本的RDS实例名称，或者一组名称，用逗号分隔
+    - rdsInstanceName: 您想应用该脚本的RDS实例名称，或者一组名称，用逗号分隔（e.g. db1,db2,db3）
     - MaxSnapshotNumber: 您想保存最大的副本数量(最大100)
 
+```    
+    若您创建的是EBS脚本，则参数 EBSVolumeId 为您想应用该脚本的EBS卷名称，或者一组名称，用逗号分隔(e.g. vol-1,vol-2,vol-3)
+```
+
 ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/specifyInfo.png)
+
+
 
 
 ### （可选）修改应用该脚本的RDS实例或者最大备份上限

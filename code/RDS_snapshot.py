@@ -9,12 +9,13 @@ def lambda_handler(event, context):
             SnapshotType='manual',
             DBInstanceIdentifier= DB_INSTANCE_NAME
         )['DBSnapshots']
-        if len(db_snapshots) >= MAX_SNAPSHOTS:
+        for i in range(0, len(db_snapshots) - MAX_SNAPSHOTS + 1):
             oldest_snapshot = db_snapshots[0]
             for db_snapshot in db_snapshots:
                 if oldest_snapshot['SnapshotCreateTime'] > db_snapshot['SnapshotCreateTime']:
                     oldest_snapshot = db_snapshot
             clientRDS.delete_db_snapshot(DBSnapshotIdentifier=oldest_snapshot['DBSnapshotIdentifier'])
+            db_snapshots.remove(oldest_snapshot)
         clientRDS.create_db_snapshot(
             DBSnapshotIdentifier=DB_INSTANCE_NAME + time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()),
             DBInstanceIdentifier=DB_INSTANCE_NAME
