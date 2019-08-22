@@ -127,12 +127,14 @@ def lambda_handler(event, context):
 
     ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/iam_role.png)
 
-    在 **摘要界面** 中，选择 **添加内联策略** ，按照下图2选定指定规则，然后输入该内联策略名称后创建(EBS的规则在下图3)。
+    在 **摘要界面** 中，选择 **添加内联策略** ，按照下图选定指定规则，然后输入该内联策略名称后创建(EBS的规则在下方第二张图)。
 
     ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/iam_add_role.png)
 
+    RDS脚本所需规则：
     ![RDS脚本规则](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/create_rules.png)
-
+    
+    EBS脚本所需规则：
     ![EBS脚本规则](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/ebs/ebs_add_iam_role.png)
 
 
