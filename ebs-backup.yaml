@@ -1,11 +1,13 @@
 AWSTemplateFormatVersion: 2010-09-09
 Parameters:
-  rdsInstanceName:
+  EBSInstanceName:
     Type: "String"
-    Description: "One RDS Instance Name, or a list of RDS Instance Names seperated by commas (e.g. db1,db2,db3)."
+    Description: "RDS Instance Name"
   MaxSnapshotNumber:
     Type: "String"
     Description: "Maximum number of saved snapshots (1-100)"
+
+
 Resources:
   rdsBackupRole:
     Type: AWS::IAM::Role
@@ -58,30 +60,28 @@ Resources:
           import boto3
           import time
           def lambda_handler(event, context):
-              clientSSM = boto3.client('ssm')
-              DB_INSTANCE_NAMES = clientSSM.get_parameter(Name='testList')['Parameter']['Value'].split(',')
-              MAX_SNAPSHOTS = int(clientSSM.get_parameter(Name='RDSMaxSnapshotNumber')['Parameter']['Value'])
               clientRDS = boto3.client('rds')
-              for DB_INSTANCE_NAME in DB_INSTANCE_NAMES:
-                  db_snapshots = clientRDS.describe_db_snapshots(
-                      SnapshotType='manual',
-                      DBInstanceIdentifier= DB_INSTANCE_NAME
-                  )['DBSnapshots']
-                  if len(db_snapshots) >= MAX_SNAPSHOTS:
-                      oldest_snapshot = db_snapshots[0]
-                      for db_snapshot in db_snapshots:
-                          if oldest_snapshot['SnapshotCreateTime'] > db_snapshot['SnapshotCreateTime']:
-                              oldest_snapshot = db_snapshot
-                      clientRDS.delete_db_snapshot(DBSnapshotIdentifier=oldest_snapshot['DBSnapshotIdentifier'])
-                  clientRDS.create_db_snapshot(
-                      DBSnapshotIdentifier=DB_INSTANCE_NAME + time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()),
-                      DBInstanceIdentifier=DB_INSTANCE_NAME
-                  )
+              clientSSM = boto3.client('ssm')
+              db_snapshots = clientRDS.describe_db_snapshots(
+                  SnapshotType='manual',
+              )['DBSnapshots']
+              MAX_SNAPSHOTS = int(clientSSM.get_parameter(Name='RDSMaxSnapshotNumber')['Parameter']['Value'])
+              DB_INSTANCE_NAME = clientSSM.get_parameter(Name='RDSInstanceName')['Parameter']['Value']
+              if len(db_snapshots) >= MAX_SNAPSHOTS:
+                  oldest_snapshot = db_snapshots[0]
+                  for db_snapshot in db_snapshots:
+                      if db_snapshots[0]['SnapshotCreateTime'] > db_snapshot['SnapshotCreateTime']:
+                          oldest_snapshot = db_snapshot
+                  clientRDS.delete_db_snapshot(DBSnapshotIdentifier=oldest_snapshot['DBSnapshotIdentifier'])
+              create_snapshot = clientRDS.create_db_snapshot(
+                  DBSnapshotIdentifier=DB_INSTANCE_NAME + time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()),
+                  DBInstanceIdentifier=DB_INSTANCE_NAME
+              )
   RDSInstanceNameParameter:
     Type: "AWS::SSM::Parameter"
     Properties:
       Name: "RDSInstanceName"
-      Type: "StringList"
+      Type: "String"
       Value: !Ref rdsInstanceName
   RDSMaxSnapshot:
     Type: "AWS::SSM::Parameter"

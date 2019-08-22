@@ -47,7 +47,7 @@
     在该Lambda函数界面中，将以下代码粘贴进函数代码中，修改参数：
     
     - 第四行 MAX_SNAPSHOTS : 您想保存最大的副本数量(最大100)
-    - 第五行 DB_INSTANCE_NAME ：您想应用该脚本的RDS实例名称
+    - 第五行 DB_INSTANCE_NAME ：您想应用该脚本的RDS实例名称, 或者一组名称
     
     然后选择右上角 **保存**。
 
@@ -57,22 +57,23 @@ import boto3
 import time
 def lambda_handler(event, context):
     MAX_SNAPSHOTS = 5
-    DB_INSTANCE_NAME = 'test'
+    DB_INSTANCE_NAMES = ['test','test2']
     clientRDS = boto3.client('rds')
-    db_snapshots = clientRDS.describe_db_snapshots(
-        SnapshotType='manual',
-    )['DBSnapshots']
-    if len(db_snapshots) >= MAX_SNAPSHOTS:
-        oldest_snapshot = db_snapshots[0]
-        for db_snapshot in db_snapshots:
-            if db_snapshots[0]['SnapshotCreateTime'] > db_snapshot['SnapshotCreateTime']:
-                oldest_snapshot = db_snapshot
-        clientRDS.delete_db_snapshot(DBSnapshotIdentifier=oldest_snapshot['DBSnapshotIdentifier'])
-    create_snapshot = clientRDS.create_db_snapshot(
-        DBSnapshotIdentifier=DB_INSTANCE_NAME + time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()),
-        DBInstanceIdentifier=DB_INSTANCE_NAME
-    )
-
+    for DB_INSTANCE_NAME in DB_INSTANCE_NAMES:
+        db_snapshots = clientRDS.describe_db_snapshots(
+            SnapshotType='manual',
+            DBInstanceIdentifier= DB_INSTANCE_NAME
+        )['DBSnapshots']
+        if len(db_snapshots) >= MAX_SNAPSHOTS:
+            oldest_snapshot = db_snapshots[0]
+            for db_snapshot in db_snapshots:
+                if oldest_snapshot['SnapshotCreateTime'] > db_snapshot['SnapshotCreateTime']:
+                    oldest_snapshot = db_snapshot
+            clientRDS.delete_db_snapshot(DBSnapshotIdentifier=oldest_snapshot['DBSnapshotIdentifier'])
+        clientRDS.create_db_snapshot(
+            DBSnapshotIdentifier=DB_INSTANCE_NAME + time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()),
+            DBInstanceIdentifier=DB_INSTANCE_NAME
+        )
 ```
 
 
@@ -122,10 +123,19 @@ def lambda_handler(event, context):
 
 - 在 **指定堆栈详细信息** 页面上，填写堆栈名称、您想应用该脚本的RDS实例名称,以及您想保存最大的副本数量(最大100)，完成后选择 **下一步**
 
-    - rdsInstanceName: 您想应用该脚本的RDS实例名称
+    - rdsInstanceName: 您想应用该脚本的RDS实例名称，或者一组名称，用逗号分隔
     - MaxSnapshotNumber: 您想保存最大的副本数量(最大100)
 
 ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/specifyInfo.png)
+
+
+### （可选）修改应用该脚本的RDS实例或者最大备份上限
+
+若您希望修改应用该脚本的RDS实例或者最大备份上限的话，操作如下：
+
+- 进入服务 **AWS Systems Manager - Parameter Store**，编辑修改图中两参数的值。
+
+    ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/param_store.png)
 
 
 ### （可选）自定义修改备份时间
