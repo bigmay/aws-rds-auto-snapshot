@@ -3,7 +3,7 @@
 
 ## 目录
 
-- [1、RDS定时备份部署流程](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/rds-backup.md)
+- [1、RDS定时备份部署流程](https://github.com/fanyizhe/aws-rds-auto-snapshot/blob/dev/rds-backup.md)
 
 ## 简介
 
@@ -11,11 +11,11 @@
 
 同样EBS也缺乏相应的备份解决方案，而它同样也能通过上述的解决方案来解决。
 
-本文提供了手动部署的流程以及相关lambda的代码。同样，本文还提供了一个CloudFormation自动化部署脚本。该脚本可以快速自动完成部署，但相比起手动创建来说会多创建2个标准参数 （AWS System Manager服务中的Parameter store服务，具体说明参见下文）。
+本文提供了手动部署的流程以及相关lambda的代码。同样，本文还提供了一个CloudFormation自动化部署脚本。该脚本可以快速自动完成部署，不需要您修改任何代码相关的部分，但相比起手动创建来说会多创建2个标准参数 （AWS System Manager服务中的Parameter store服务，具体说明参见下文）。
 
 ## 解决方案架构图
 
-## [1、RDS定时备份部署](https://github.com/fanyizhe/aws-rds-auto-snapshot/blob/dev/rds-backup.md)
+## [1、RDS定时备份](https://github.com/fanyizhe/aws-rds-auto-snapshot/blob/dev/rds-backup.md)
 
 * ### 手动部署
 
