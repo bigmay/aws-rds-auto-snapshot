@@ -5,7 +5,7 @@
 
 - [1、RDS定时备份部署流程](https://github.com/lab798/aws-auto-snapshot/blob/master/rds-backup.md)
 
-- [1、EBS定时备份部署流程](https://github.com/lab798/aws-auto-snapshot/blob/master/ebs-backup.md)
+- [2、EBS定时备份部署流程](https://github.com/lab798/aws-auto-snapshot/blob/master/ebs-backup.md)
 
 ## 1.2. 目录
 
@@ -51,4 +51,4 @@
 
 - [1、RDS定时备份部署流程](https://github.com/lab798/aws-auto-snapshot/blob/master/rds-backup.md)
 
-- [1、EBS定时备份部署流程](https://github.com/lab798/aws-auto-snapshot/blob/master/ebs-backup.md)
+- [2、EBS定时备份部署流程](https://github.com/lab798/aws-auto-snapshot/blob/master/ebs-backup.md)
