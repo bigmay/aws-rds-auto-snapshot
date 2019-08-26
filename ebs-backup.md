@@ -8,7 +8,6 @@
 - [2. 手动部署](#2-手动部署)
 - [3. 自动部署](#3-自动部署)
 
-
 ## **1. 简介**
 
 目前EBS中国区暂无定时自动创建EBS快照的功能。因此，本文提供了一种解决方案：通过AWS CloudWatch Events定时任务触发AWS Lambda函数来执行备份EBS的操作。
@@ -17,14 +16,14 @@
 
 ## **2. 手动部署**
 
-- ### **1、创建基础的Lambda**
+- ### **2.1. 创建基础的Lambda**
 
     在Lambda创建界面，选择 **从头开始创作**，运行语言选择Python3.7。
     在 **权限 - 执行角色** 中选择 **创建具有基本Lambda权限的角色**
 
     ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/manual-create-lambda.png)
 
-- ### **2、填入代码**
+- ### **2.2. 填入代码**
 
     在该Lambda函数界面中，将以下代码粘贴进函数代码中，修改参数：
     
@@ -63,7 +62,7 @@ def lambda_handler(event, context):
 
 ```
 
-- ### **3、添加IAM Role权限**
+- ### **2.3. 添加IAM Role权限**
 
     在下方 **执行界面** 中，点击 **查看your_iam_role角色** , 进入该角色的摘要中。
 
@@ -76,7 +75,7 @@ def lambda_handler(event, context):
     ![EBS脚本规则](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/ebs/ebs_add_iam_role.png)
 
 
-- ### **4、添加触发器**
+- ### **2.4. 添加触发器**
 
     在该Lambda函数界面，选择 **添加触发器**。
 
@@ -86,7 +85,7 @@ def lambda_handler(event, context):
     ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/input_trigger.png)
 
 
-- ### **5、创建完成**
+- ### **2.5. 创建完成**
 
     至此全部手动部署工作已经全部完成。
 
