@@ -15,7 +15,7 @@
 
 ## 解决方案架构图
 
-## [1、RDS定时备份部署](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/rds-backup.md)
+## [1、RDS定时备份部署](https://github.com/fanyizhe/aws-rds-auto-snapshot/blob/dev/rds-backup.md)
 
 * ### 手动部署
 
