@@ -5,6 +5,8 @@
 
 - [1、RDS定时备份部署流程](https://github.com/lab798/aws-auto-snapshot/blob/master/rds-backup.md)
 
+- [1、EBS定时备份部署流程](https://github.com/lab798/aws-auto-snapshot/blob/master/ebs-backup.md)
+
 ## 1.2. 目录
 
 - [1.3. 简介](#13-简介)
@@ -20,6 +22,8 @@
 本文提供了手动部署的流程以及相关lambda的代码。同样，本文还提供了一个CloudFormation自动化部署脚本。该脚本可以快速自动完成部署，不需要您修改任何代码相关的部分，但相比起手动创建来说会多创建2个标准参数 （AWS System Manager服务中的Parameter store服务，具体说明参见下文）。
 
 ## 1.4. 解决方案架构图
+
+因为EBS部分的架构图和创建的资源与RDS基本相同，所以下文介绍RDS的解决方案架构图。
 
 * ### 手动部署
 
@@ -46,3 +50,5 @@
 ## 1.5. 部署流程
 
 - [1、RDS定时备份部署流程](https://github.com/lab798/aws-auto-snapshot/blob/master/rds-backup.md)
+
+- [1、EBS定时备份部署流程](https://github.com/lab798/aws-auto-snapshot/blob/master/ebs-backup.md)
