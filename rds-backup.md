@@ -1,27 +1,26 @@
 
 # 1. RDS定时备份
 
-[TOC]<!-- TOC -->autoauto- [1. RDS定时备份](#1-rds定时备份)auto    - [1.1. 应用场景](#11-应用场景)auto    - [1.2. 解决方案](#12-解决方案)auto        - [1.2.1. 手动部署](#121-手动部署)auto        - [1.2.2. 自动部署](#122-自动部署)auto            - [1.2.2.1. 要点](#1221-要点)auto            - [1.2.2.2. 修改应用该脚本的RDS实例或者最大备份上限](#1222-修改应用该脚本的rds实例或者最大备份上限)auto            - [1.2.2.3. 自定义修改备份时间](#1223-自定义修改备份时间)autoauto<!-- /TOC -->
+- [1.1. 简介](#11-简介)
+- [1.2. 手动部署](#12-手动部署)
+- [1.3 自动部署](#13-自动部署)
 
-
-## 1.1. 应用场景
+## **1.1. 简介**
 
 目前RDS的自动备份方法是在每日的固定时间进行备份，换言之备份频率为固定每日一次，若想要实现小时级或者分钟级的备份频率则无法通过这种方法来解决。因此，本文提供了一种解决方案：通过AWS CloudWatch Events定时任务触发AWS Lambda函数来执行备份RDS的操作。
 
 本文提供了手动部署的流程以及相关lambda的代码。同样，本文还提供了一个CloudFormation自动化部署脚本。该脚本可以快速自动完成部署，但相比起手动创建来说会多创建2个标准参数 （AWS System Manager服务中的Parameter store服务，具体说明参见下文）。
 
-## 1.2. 解决方案 
+## **1.2. 手动部署**
 
-### 1.2.1. 手动部署
-
-- #### **1、创建基础的Lambda**
+- ### **1、创建基础的Lambda**
 
     在Lambda创建界面，选择 **从头开始创作**，运行语言选择Python3.7。
     在 **权限 - 执行角色** 中选择 **创建具有基本Lambda权限的角色**
 
     ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/manual-create-lambda.png)
 
-- #### **2、填入代码**
+- ### **2、填入代码**
 
     - **RDS版参数说明及代码** 
 
@@ -59,9 +58,7 @@ def lambda_handler(event, context):
 
 ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/save_code.png)
 
-
-
-- #### **3、添加IAM Role权限**
+- ### **3、添加IAM Role权限**
 
     在下方 **执行界面** 中，点击 **查看your_iam_role角色** , 进入该角色的摘要中。
 
@@ -76,7 +73,7 @@ def lambda_handler(event, context):
     
 
 
-- #### **4、添加触发器**
+- ### **4、添加触发器**
 
     在该Lambda函数界面，选择 **添加触发器**。
 
@@ -87,37 +84,31 @@ def lambda_handler(event, context):
     ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/input_trigger.png)
 
 
-- #### **5、创建完成**
+- ### **5、创建完成**
 
     至此全部手动部署工作已经全部完成。
 
-### 1.2.2. 自动部署
+## **1.3. 自动部署**
 
-您可以通过点击下方 **Quick Start** 链接直接进入创建页面。
-
-**- RDS CloudFormation Quick Start**
+您可以通过点击下方 **Quick Start** 链接直接进入Cloudformation创建页面。该模板不需要您像手动部署一样修改lambda的代码。
 
 [![Image link china](http://cdn.quickstart.org.cn/assets/ChinaRegion.png)](https://console.amazonaws.cn/cloudformation/home?region=cn-north-1#/stacks/new?stackName=backup-rds&templateURL=https://quickstart-rds-backup.s3.cn-north-1.amazonaws.com.cn/rds-backup.yaml)
 
-
-
-#### 1.2.2.1. 要点
+### 流程要点
 
 - 检查导航栏右上角显示的所在区域，根据需要进行更改。
 
 - 在 **指定模板** 页面上，保留模板 URL 的默认设置，然后选择 **下一步** 。
 ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/CFN_template.png)
 
-- 在 **指定堆栈详细信息** 页面上，填写堆栈名称、您想应用该脚本的RDS实例名称,以及您想保存最大的副本数量(最大100)，完成后选择 **下一步**
+- 在 **指定堆栈详细信息** 页面上，填写您的自定义参数，参数说明如下：
 
-    - rdsInstanceName: 您想应用该脚本的RDS实例名称，或者一组名称，用逗号分隔（e.g. db1,db2,db3）
-    - MaxSnapshotNumber: 您想保存最大的副本数量(最大100)
+  - rdsInstanceName: 您想应用该脚本的RDS实例名称，或者一组名称，用逗号分隔（e.g. db1,db2,db3）
+  - MaxSnapshotNumber: 您想保存最大的副本数量(最大100)
 
 ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/specifyInfo.png)
 
-
-
-#### 1.2.2.2. 修改应用该脚本的RDS实例或者最大备份上限
+### **修改应用该脚本的RDS实例或者最大备份上限**
 
 若您希望修改应用该脚本的RDS实例或者最大备份上限的话，操作如下：
 
@@ -125,8 +116,10 @@ def lambda_handler(event, context):
 
     ![](https://raw.githubusercontent.com/fanyizhe/aws-rds-auto-snapshot/dev/pic/param_store.png)
 
+    
 
-#### 1.2.2.3. 自定义修改备份时间
+
+### **自定义修改备份时间**
 
 该脚本默认自动创建备份的时间为2小时。
 
