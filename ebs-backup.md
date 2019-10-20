@@ -2,7 +2,7 @@
 
 # EBS定时备份
 
-[返回首页](https://github.com/lab798/aws-auto-snapshot)
+[返回首页](https://github.com/fanyizhe/aws-auto-snapshot)
 
 - [1. 简介](#1-简介)
 - [2. 手动部署](#2-手动部署)

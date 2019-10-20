@@ -3,9 +3,12 @@
 
 ## 1.1. 部署指南页面
 
-- [1、RDS定时备份部署流程](https://github.com/lab798/aws-auto-snapshot/blob/master/rds-backup.md)
+- [1、RDS定时备份部署流程](https://github.com/fanyizhe/aws-rds-auto-snapshot/blob/dev/rds-backup.md)
 
-- [2、EBS定时备份部署流程](https://github.com/lab798/aws-auto-snapshot/blob/master/ebs-backup.md)
+- [2、EBS定时备份部署流程](https://github.com/fanyizhe/aws-rds-auto-snapshot/blob/dev/ebs-backup.md)
+
+- [3. 定时创建AMI部署流程](https://github.com/fanyizhe/aws-rds-auto-snapshot/blob/dev/ami-backup.md)
+
 
 ## 1.2. 目录
 
@@ -49,6 +52,9 @@
 
 ## 1.5. 部署流程
 
-- [1、RDS定时备份部署流程](https://github.com/lab798/aws-auto-snapshot/blob/master/rds-backup.md)
+- [1、RDS定时备份部署流程](https://github.com/fanyizhe/aws-rds-auto-snapshot/blob/dev/rds-backup.md)
 
-- [2、EBS定时备份部署流程](https://github.com/lab798/aws-auto-snapshot/blob/master/ebs-backup.md)
+- [2、EBS定时备份部署流程](https://github.com/fanyizhe/aws-rds-auto-snapshot/blob/dev/ebs-backup.md)
+
+- [3. 定时创建AMI部署流程](https://github.com/fanyizhe/aws-rds-auto-snapshot/blob/dev/ami-backup.md)
+
